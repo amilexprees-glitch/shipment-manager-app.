@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "مدير الشحنات الذكي",
+    "slug": "shipment-manager-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.shipmentmanager.smart"
+    },
+    "ios": {
+      "bundleIdentifier": "com.shipmentmanager.smart"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "نحتاج إلى الكاميرا لتصوير بوالص الشحن."
+        }
+      ]
+    ]
+  }
+}
