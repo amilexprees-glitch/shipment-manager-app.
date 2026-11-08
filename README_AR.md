@@ -16,7 +16,7 @@
 لإنشاء APK قابل للتثبيت، بعد إعداد حساب Expo:
 ```bash
 npx eas-cli@latest build:configure
-npx eas-cli@latest build --platform android --profile preview
+npx eas-cli@latest build --platform android --profile preview 
 ```
 قد تحتاج إلى تسجيل الدخول إلى Expo وإكمال إعدادات البناء.
 
@@ -24,4 +24,4 @@ npx eas-cli@latest build --platform android --profile preview
 - البيانات الحالية تجريبية وموجودة داخل الكود.
 - مسح البوليصة لا يستخدم ذكاءً اصطناعيًا حقيقيًا حتى الآن؛ الكود ينشئ بيانات تجريبية بعد التصوير.
 - لا توجد قاعدة بيانات دائمة، لذلك الشحنات المضافة قد لا تبقى بعد إغلاق التطبيق.
-- راجع أرقام الهاتف وتنسيقها قبل استخدام واتساب مع عملاء حقيقيين.
+- راجع أرقام الهاتف وتنسيقها قبل استخدام واتساب مع عملاء حقيقيين.  
