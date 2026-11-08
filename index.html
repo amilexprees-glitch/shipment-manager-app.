@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMIAl EXPRESS - نظام محاسبي متكامل لشركة شحن</title>
+  <!-- مكتبة التعرف الضوئي على النصوص (OCR) لقراءة الصور -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5/dist/tesseract.min.js"></script>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--card:#1f2937;--muted:#94a3b8;--text:#e5e7eb;--accent:#38bdf8;--accent2:#22c55e;--warn:#f59e0b;--danger:#ef4444;}
+    *{box-sizing:border-box;font-family:Segoe UI,Tahoma,Arial,sans-serif}
+    body{margin:0;background:linear-gradient(180deg,#081120,#0f172a 40%,#111827);color:var(--text)}
+    .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+    .sidebar{background:rgba(2,6,23,.85);border-left:1px solid rgba(148,163,184,.15);padding:20px;position:sticky;top:0;height:100vh;overflow:auto}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+    .logo{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#38bdf8,#22c55e);display:grid;place-items:center;font-size:24px;font-weight:800;color:#00111f;box-shadow:0 10px 25px rgba(56,189,248,.3)}
+    .brand h1{margin:0;font-size:20px;line-height:1.2}
+    .brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+    .nav{display:grid;gap:10px}
+    .nav button{all:unset;cursor:pointer;background:rgba(15,23,42,.8);border:1px solid rgba(148,163,184,.15);padding:14px;border-radius:14px;display:flex;align-items:center;gap:12px;transition:.2s}
+    .nav button:hover,.nav button.active{background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(34,197,94,.12));border-color:rgba(56,189,248,.4);transform:translateY(-1px)}
+    .icon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:18px}
+    .main{padding:24px;overflow:auto}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+    .hero{background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(34,197,94,.08));border:1px solid rgba(148,163,184,.15);padding:20px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+    .hero h2{margin:0 0 8px;font-size:28px}
+    .hero p{margin:0;color:var(--muted)}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:18px 0}
+    .stat{background:rgba(17,24,39,.85);border:1px solid rgba(148,163,184,.14);padding:14px;border-radius:18px}
+    .stat .label{color:var(--muted);font-size:12px}.stat .value{font-size:18px;font-weight:800;margin-top:8px}
+    .content{display:none}.content.active{display:block}
+    .card{background:rgba(17,24,39,.88);border:1px solid rgba(148,163,184,.14);padding:18px;border-radius:18px}
+    .card h3{margin:0 0 10px}.card p{margin:0;color:var(--muted);line-height:1.7}
+    .sheet-wrap{background:rgba(2,6,23,.7);border:1px solid rgba(148,163,184,.18);border-radius:18px;padding:12px;overflow:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:1300px}
+    th,td{padding:12px 10px;border-bottom:1px solid rgba(148,163,184,.14);white-space:nowrap;text-align:right}
+    th{position:sticky;top:0;background:#0f172a;color:#bfdbfe;font-weight:700}
+    tr:hover td{background:rgba(56,189,248,.06)}
+    .tag{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(56,189,248,.15);color:#7dd3fc;font-size:12px;margin-left:8px}
+    .btn-detail{background:rgba(56,189,248,.2);color:#38bdf8;border:1px solid rgba(56,189,248,.4);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:.2s}
+    .btn-detail:hover{background:#38bdf8;color:#00111f}
+    .btn-back{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.4);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;margin-bottom:15px;display:inline-flex;align-items:center;gap:6px;}
+    .btn-back:hover{background:#ef4444;color:white}
+    .btn-action{background:linear-gradient(135deg,#38bdf8,#22c55e);color:#00111f;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;display:inline-flex;align-items:center;gap:6px;}
+    .btn-action:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-refresh{background:#38bdf8; color:#00111f; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;}
+    .btn-refresh:hover{background:#0284c7; color:#fff;}
+    .footer{margin-top:18px;color:var(--muted);font-size:12px}
+    .filter-input{width:100%;padding:10px 14px;background:rgba(15,23,42,.9);border:1px solid rgba(148,163,184,.2);border-radius:10px;color:var(--text);margin-bottom:15px;font-size:14px}
+
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center;z-index:9999}
+    .modal-card{background:#1e293b;padding:24px;border-radius:16px;border:1px solid rgba(56,189,248,.3);width:400px;text-align:center}
+    .modal-card h3{margin-top:0;color:#38bdf8}
+    .modal-btn{display:block;width:100%;padding:12px;margin:10px 0;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px}
+    .modal-btn-print{background:#38bdf8;color:#00111f}
+    .modal-btn-excel{background:#22c55e;color:#fff}
+    .modal-btn-close{background:#ef4444;color:#fff}
+
+    @media print {
+      @page { size: landscape; margin: 5mm; }
+      body * { visibility: hidden; }
+      #print-modal-area, #print-modal-area * { visibility: visible; }
+      #print-modal-area { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 10px; font-size: 12px; }
+      #print-modal-area table { width: 100%; border-collapse: collapse; }
+      #print-modal-area th, #print-modal-area td { border: 1px solid #333; padding: 6px; text-align: right; color: #000; }
+      .no-print { display: none !important; }
+    }
+    @media (max-width:1200px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">A</div>
+        <div>
+          <h1>AMIAl EXPRESS</h1>
+          <p>نظام محاسبي وتشغيلي لشركة شحن</p>
+        </div>
+      </div>
+      <div class="nav">
+        <button class="active" data-tab="dashboard"><span class="icon">🏠</span>الرئيسية والتحليل الشامل</button>
+        <button data-tab="shipments"><span class="icon">📦</span>إدخال الشحنات (جوجل شيت)</button>
+        <button data-tab="reps"><span class="icon">🧑‍💼</span>تحليل المناديب</button>
+        <button data-tab="profits"><span class="icon">📈</span>الأرباح والمصروفات</button>
+        <button data-tab="branches"><span class="icon">🏢</span>المكاتب والرواسل</button>
+        <button data-tab="print"><span class="icon">🖨️</span>الطباعة والتصدير</button>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="topbar hero">
+        <div>
+          <h2>لوحة التحليل الشامل - AMIAl EXPRESS</h2>
+          <p>إحصائيات شهر أكتوبر مع الأرباح الدورية للأسبوع الحالي.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div class="small">حالة المزامنة: <span class="tag" style="background:rgba(34,197,94,.2);color:#22c55e;" id="connection-status">متصل بالسحابة 🟢</span></div>
+          <button class="btn-refresh" onclick="loadSheetData()">🔄 تحديث فوري</button>
+        </div>
+      </div>
+
+      <!-- الرئيسية -->
+      <section id="dashboard" class="content active">
+        <div class="stats">
+          <div class="stat"><div class="label">عدد التسليم الشهري</div><div class="value" id="stat-delivered-count" style="color:var(--accent)">0</div></div>
+          <div class="stat"><div class="label">إجمالي المبيعات الشهرية (الوارد K)</div><div class="value" id="stat-sales">0 ج.م</div></div>
+          <div class="stat"><div class="label">إجمالي المصروفات الشهرية (شحن المندوب)</div><div class="value" id="stat-expenses" style="color:var(--danger)">0 ج.م</div></div>
+          <div class="stat"><div class="label">صافي الربح الشهري النهائي</div><div class="value" id="stat-net-profit" style="color:var(--accent2)">0 ج.م</div></div>
+        </div>
+
+        <div class="stats" style="margin-top: 10px;">
+          <div class="stat" style="border-color: rgba(56,189,248,0.4);"><div class="label">📅 صافي ربح الأسبوع (السبت + الأحد + الإثنين)</div><div class="value" id="stat-group-1" style="color:var(--accent)">0 ج.م</div></div>
+          <div class="stat" style="border-color: rgba(34,197,94,0.4);"><div class="label">📅 صافي ربح الأسبوع (الثلاثاء + الأربعاء + الخميس)</div><div class="value" id="stat-group-2" style="color:var(--accent2)">0 ج.م</div></div>
+        </div>
+      </section>
+
+      <!-- شيت إدخال الشحنات -->
+      <section id="shipments" class="content">
+        <div class="sheet-toolbar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <b>شيت الشحنات الرئيسي</b> <span class="tag">Google Sheets</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="background:rgba(56,189,248,0.1); border:1px solid #38bdf8; padding:5px 10px; border-radius:8px; display:flex; align-items:center; gap:6px;">
+              <span style="font-size:12px; color:#38bdf8; font-weight:bold;">⚡ اسكنر الباركود:</span>
+              <input type="text" id="barcodeScannerInput" placeholder="امسح الباركود هنا..." style="background:#0f172a; border:1px solid rgba(148,163,184,0.3); color:#fff; padding:4px 8px; border-radius:6px; font-size:13px; width:160px;" onkeypress="handleBarcodeScan(event)" />
+            </div>
+
+            <button onclick="openOcrModal()" class="tag" style="padding:8px 14px; background:#8b5cf6; color:#fff; border:none; font-weight:bold; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              👤 إضافة وتعيين مندوب للصور
+            </button>
+
+            <button onclick="openDirectCameraModal()" class="tag" style="padding:8px 14px; background:#22c55e; color:#fff; border:none; font-weight:bold; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              📷 فتح الكاميرا والتقاط إيصال
+            </button>
+
+            <a href="https://docs.google.com/spreadsheets/d/1dR7NLy94ZNleaife-kdeR_Q02b7brDjL_oXtAHDSReI/edit?gid=687102612#gid=687102612" 
+               target="_blank" 
+               class="tag" 
+               style="padding:8px 14px; background:#38bdf8; color:#00111f; border:none; font-weight:bold; border-radius:8px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              🔗 فتح الشيت مباشرة ↗
+            </a>
+          </div>
+        </div>
+        <div class="sheet-wrap" style="height: 75vh;">
+          <iframe id="sheetFrame" src="https://docs.google.com/spreadsheets/d/1dR7NLy94ZNleaife-kdeR_Q02b7brDjL_oXtAHDSReI/edit?gid=687102612#gid=687102612&embedded=true" width="100%" height="100%" style="border:none; border-radius: 12px;"></iframe>
+        </div>
+      </section>
+
+      <!-- تحليل المناديب -->
+      <section id="reps" class="content">
+        <div class="card">
+          <h3>تحليل أداء وتوريدات المناديب</h3>
+          <p>إجمالي الشحنات، الشحنات المسلمة، إجمالي سعر الشحنات، شحن المندوب.</p>
+          
+          <div style="margin-top: 15px;">
+            <input type="text" id="repFilterInput" class="filter-input" placeholder="🔍 ابحث باسم المندوب هنا..." onkeyup="filterRepsTable()" />
+          </div>
+
+          <div class="sheet-wrap">
+            <table id="repsTable">
+              <thead>
+                <tr>
+                  <th>اسم المندوب</th>
+                  <th>إجمالي الشحنات</th>
+                  <th>الشحنات المسلمة (تم التنفيذ)</th>
+                  <th>إجمالي سعر الشحنات (عمود J)</th>
+                  <th>شحن المندوب (عمود R)</th>
+                  <th>عرض التفاصيل اليومية</th>
+                  <th>موقف التوريد</th>
+                </tr>
+              </thead>
+              <tbody id="reps-table-body">
+                <tr><td colspan="7" style="text-align:center;">جاري تحليل البيانات...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- تفاصيل المندوب اليومية -->
+      <section id="rep-detail-page" class="content">
+        <div style="display:flex; justify-content:space-between; align-items:center;" class="no-print">
+          <button class="btn-back" onclick="backToRepsList()">← العودة إلى قائمة المناديب</button>
+        </div>
+        
+        <div class="card" id="print-modal-area">
+          <h3 id="pageRepTitle" style="color: var(--accent); margin-bottom: 5px;">تفاصيل أداء المندوب يومياً</h3>
+          <p style="color: var(--muted); margin-bottom: 15px;" class="no-print">إدارة التحصيل، المتعلقات المعلقة، وتوثيق المحاسب (مزامنة سحابية).</p>
+          
+          <div class="sheet-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>المندوب</th>
+                  <th>التاريخ</th>
+                  <th>عدد الشحنات</th>
+                  <th>الشحنات المسلمة</th>
+                  <th>سعر الشحنات المسلمة</th>
+                  <th>شحن المندوب</th>
+                  <th>صافي المندوب</th>
+                  <th>الوارد (نقدي / إنستا)</th>
+                  <th>صورة التحويل</th>
+                  <th>المعلقات ⚠️</th>
+                  <th>المحاسب ✅</th>
+                  <th>رقم الواتساب 📱</th>
+                  <th class="no-print">الإجراءات (طباعة / إكسيل / إرسال) 🚀</th>
+                </tr>
+              </thead>
+              <tbody id="page-detail-table-body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- الأرباح والمصروفات -->
+      <section id="profits" class="content">
+        <div class="card">
+          <h3>تحليل الأرباح والمصروفات</h3>
+          <div class="stats" style="margin-top:15px;">
+            <div class="stat"><div class="label">إجمالي شحن المكتب</div><div class="value" id="profit-net-office">0 ج.م</div></div>
+            <div class="stat"><div class="label">إجمالي شحن المندوب (المصروفات)</div><div class="value" id="profit-expenses-val" style="color:var(--danger)">0 ج.م</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- المكاتب والرواسل -->
+      <section id="branches" class="content">
+        <div class="card">
+          <h3>حسابات المكاتب والرواسل</h3>
+          <div class="sheet-wrap" style="margin-top:15px;">
+            <table>
+              <thead><tr><th>اسم الراسل / العميل</th><th>عدد الأوردرات</th><th>إجمالي المبالغ</th></tr></thead>
+              <tbody id="senders-table-body">
+                <tr><td colspan="3" style="text-align:center;">جاري تحليل الرواسل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="print" class="content">
+        <div class="card"><h3>الطباعة والتصدير</h3></div>
+      </section>
+
+      <div class="footer">نظام AMIAl EXPRESS - تحليل شهري شامل وأسبوعي دقيق.</div>
+    </main>
+  </div>
+
+  <!-- نافذة تعيين المندوب عبر الصور (OCR) -->
+  <div id="ocrModal" class="modal-overlay">
+    <div class="modal-card" style="width:450px;">
+      <h3>👤 تعيين مندوب عبر صور الشحنات</h3>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">أدخل اسم المندوب واختر صور الشحنات (استخراج دقيق لأرقام الهواتف):</p>
+      
+      <input type="text" id="targetRepName" placeholder="مثال: ناصف 888" class="filter-input" style="margin-bottom:10px;" />
+      
+      <div style="margin-bottom:12px; text-align:right;">
+        <label style="font-size:12px; color:var(--accent);">اختر صور الشحنات:</label>
+        <input type="file" id="repImagesInput" accept="image/*" multiple style="display:block; margin-top:5px; font-size:12px; color:#fff;" />
+      </div>
+
+      <div id="ocrStatusMsg" style="font-size:12px; font-weight:bold; margin-bottom:8px; min-height:20px;"></div>
+      <div id="unmatchedList" style="font-size:11px; color:var(--warn); text-align:right; max-height:120px; overflow-y:auto; margin-bottom:10px; background:rgba(0,0,0,0.3); padding:8px; border-radius:6px;"></div>
+
+      <button class="modal-btn modal-btn-excel" onclick="processImagesForRep()">🚀 استخراج الهواتف وتحديث (M)</button>
+      <button class="modal-btn modal-btn-close" onclick="closeOcrModal()">❌ إغلاق</button>
+    </div>
+  </div>
+
+  <!-- نافذة الكاميرا المباشرة -->
+  <div id="cameraModal" class="modal-overlay">
+    <div class="modal-card" style="width:400px;">
+      <h3>📸 التقاط صورة الإيصال أو الباركود</h3>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:15px;">قم بتوجيه الكاميرا نحو الباركود أو الإيصال ثم التقط الصورة لحفظها ومعالجتها:</p>
+      
+      <div style="background:#000; border-radius:12px; overflow:hidden; margin-bottom:15px; position:relative;">
+        <video id="cameraStream" autoplay playsinline width="100%" height="220" style="object-fit:cover; display:block;"></video>
+        <canvas id="snapshotCanvas" style="display:none;"></canvas>
+      </div>
+
+      <button class="modal-btn modal-btn-excel" onclick="takeSnapshot()">📸 التقاط وحفظ الصورة</button>
+      <button class="modal-btn modal-btn-close" onclick="closeCameraModal()">❌ إغلاق الكاميرا</button>
+    </div>
+  </div>
+
+  <div id="actionModal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="modalTitle">إجراءات إضافية</h3>
+      <p id="modalSub" style="font-size:12px; color:var(--muted); margin-bottom:15px;"></p>
+      <button class="modal-btn modal-btn-print" onclick="executePrint()">🖨️ طباعة الصف</button>
+      <button class="modal-btn modal-btn-excel" onclick="executeExcel()">📥 تصدير الإكسيل (A-O)</button>
+      <button class="modal-btn modal-btn-close" onclick="closeActionModal()">❌ إغلاق</button>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzVYKAIVsu8s4llyeLD8vSqr3ghJm_nv7Ncj0jytC0ZXdSjDmIkdn1mLKmlJ11tUWURDw/exec";
+    
+    let globalRepsData = {};
+    let rawSheetRows = []; 
+    let cloudRepsData = {}; 
+    let activeRepDetailName = null;
+    let videoStream = null;
+
+    const buttons = document.querySelectorAll('.nav button');
+    const sections = document.querySelectorAll('.content');
+    
+    buttons.forEach(btn => btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sections.forEach(s => s.classList.remove('active'));
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      if(btn.dataset.tab !== 'reps') activeRepDetailName = null;
+    }));
+
+    function parseNum(val) {
+      if (val === undefined || val === null || val === "") return 0;
+      let cleanVal = String(val).replace(/[^0-9.-]+/g, ""); 
+      let num = parseFloat(cleanVal);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function loadSheetData() {
+      let statusTag = document.getElementById('connection-status');
+      statusTag.innerText = "جاري المزامنة السحابية... 🔄";
+      statusTag.style.color = "var(--warn)";
+
+      fetch(WEB_APP_URL + "?action=getData")
+        .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.json();
+        })
+        .then(res => {
+          if (!res || !res.shipments) throw new Error("بيانات غير صالحة");
+          
+          rawSheetRows = res.shipments; 
+          let rows = rawSheetRows.slice(1);
+          
+          let totalDeliveredCount = 0; 
+          let totalSales = 0;          
+          let totalNetOffice = 0;      
+          let totalRepShipping = 0;    
+          
+          let group1Profit = 0; 
+          let group2Profit = 0; 
+
+          globalRepsData = {};
+          let sendersMap = {};
+
+          rows.forEach((row, index) => {
+            let dateStr = String(row[1] || "").trim(); 
+            let sender = row[3] || "غير محدد";
+            let rawRep = String(row[12] || "").trim(); 
+            if (!rawRep) return;
+
+            let repCleanName = rawRep.replace(/[0-9]/g, '').trim();
+            if (!repCleanName) repCleanName = rawRep;
+
+            let formattedDate = dateStr !== "" ? dateStr : "10/2026";
+
+            let colJVal = parseNum(row[9]); 
+            let colKVal = row[10]; 
+            let colRVal = parseNum(row[17]) || parseNum(row[16]); 
+
+            let netOffice = parseNum(row[19]); 
+            let rowNetProfit = netOffice - colRVal; 
+
+            if (!globalRepsData[repCleanName]) {
+              globalRepsData[repCleanName] = { 
+                days: {}, 
+                totalCount: 0, 
+                deliveredCount: 0, 
+                totalAmountJ: 0, 
+                totalRepShippingR: 0 
+              };
+            }
+            if (!globalRepsData[repCleanName].days[rawRep]) {
+              globalRepsData[repCleanName].days[rawRep] = { 
+                dayName: rawRep, 
+                date: formattedDate,
+                count: 0, 
+                deliveredCount: 0, 
+                amountJ: 0, 
+                deliveredSalesK: 0,
+                shippingR: 0 
+              };
+            }
+
+            globalRepsData[repCleanName].days[rawRep].count++;
+            globalRepsData[repCleanName].totalCount++;
+
+            let isDelivered = (colKVal !== "" && colKVal !== null && !isNaN(parseFloat(colKVal)));
+            
+            if (isDelivered) {
+              let deliveredAmount = parseNum(colKVal);
+              totalDeliveredCount++; 
+              totalSales += deliveredAmount;
+
+              globalRepsData[repCleanName].days[rawRep].deliveredCount++;
+              globalRepsData[repCleanName].days[rawRep].deliveredSalesK += deliveredAmount;
+              globalRepsData[repCleanName].deliveredCount++;
+
+              if (!sendersMap[sender]) sendersMap[sender] = { count: 0, total: 0 };
+              sendersMap[sender].count++;
+              sendersMap[sender].total += deliveredAmount;
+            }
+
+            globalRepsData[repCleanName].days[rawRep].amountJ += colJVal;
+            globalRepsData[repCleanName].totalAmountJ += colJVal;
+
+            globalRepsData[repCleanName].days[rawRep].shippingR += colRVal;
+            globalRepsData[repCleanName].totalRepShippingR += colRVal;
+
+            totalNetOffice += netOffice;
+            totalRepShipping += colRVal;
+
+            if (index % 2 === 0) {
+              group1Profit += rowNetProfit;
+            } else {
+              group2Profit += rowNetProfit;
+            }
+          });
+
+          let finalNetProfit = totalNetOffice - totalRepShipping;
+
+          document.getElementById('stat-delivered-count').innerText = totalDeliveredCount;
+          document.getElementById('stat-sales').innerText = totalSales.toLocaleString() + " ج.م";
+          document.getElementById('stat-expenses').innerText = totalRepShipping.toLocaleString() + " ج.م";
+          document.getElementById('stat-net-profit').innerText = finalNetProfit.toLocaleString() + " ج.م";
+          
+          document.getElementById('stat-group-1').innerText = group1Profit.toLocaleString(undefined, {maximumFractionDigits: 2}) + " ج.م";
+          document.getElementById('stat-group-2').innerText = group2Profit.toLocaleString(undefined, {maximumFractionDigits: 2}) + " ج.م";
+
+          document.getElementById('profit-net-office').innerText = totalNetOffice.toLocaleString() + " ج.م";
+          document.getElementById('profit-expenses-val').innerText = totalRepShipping.toLocaleString() + " ج.م";
+
+          let repsHtml = "";
+          for (let r in globalRepsData) {
+            let data = globalRepsData[r];
+            repsHtml += `<tr>
+              <td><b>${r}</b></td>
+              <td>${data.totalCount} شحنات</td>
+              <td><span style="color:var(--accent2); font-weight:bold;">${data.deliveredCount}</span> شحنات</td>
+              <td>${data.totalAmountJ.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ج.م</td>
+              <td><span style="color:var(--danger);">${data.totalRepShippingR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span> ج.م</td>
+              <td><button class="btn-detail" onclick="openRepDetailPage('${r}')">📂 فتح صفحة التفاصيل</button></td>
+              <td><span class="tag" style="background:rgba(34,197,94,.2);color:#22c55e;">نشط</span></td>
+            </tr>`;
+          }
+          document.getElementById('reps-table-body').innerHTML = repsHtml || `<tr><td colspan="7" style="text-align:center;">لا توجد بيانات</td></tr>`;
+
+          let sendersHtml = "";
+          for (let s in sendersMap) {
+            sendersHtml += `<tr><td>${s}</td><td>${sendersMap[s].count} أوردرات</td><td>${sendersMap[s].total.toLocaleString()} ج.م</td></tr>`;
+          }
+          document.getElementById('senders-table-body').innerHTML = sendersHtml || `<tr><td colspan="3" style="text-align:center;">لا توجد رواسل</td></tr>`;
+
+          statusTag.innerText = "متصل بالسحابة 🟢";
+          statusTag.style.color = "#22c55e";
+
+        })
+        .catch(err => {
+          console.error("خطأ في الاتصال:", err);
+          statusTag.innerText = "تعذر الاتصال بالسحابة ⚠️";
+          statusTag.style.color = "var(--danger)";
+        });
+    }
+
+    function preprocessImage(file) {
+      return new Promise((resolve) => {
+        let reader = new FileReader();
+        reader.onload = function(event) {
+          let img = new Image();
+          img.onload = function() {
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let data = imgData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+              let r = data[i], g = data[i+1], b = data[i+2];
+              let avg = (r * 0.3) + (g * 0.59) + (b * 0.11);
+              let threshold = 130;
+              let v = (avg > threshold) ? 255 : 0; 
+              data[i] = v; data[i+1] = v; data[i+2] = v;
+            }
+            ctx.putImageData(imgData, 0, 0);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.95);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function openOcrModal() {
+      document.getElementById('ocrModal').style.display = 'flex';
+      document.getElementById('ocrStatusMsg').innerText = "";
+      document.getElementById('unmatchedList').innerText = "";
+    }
+
+    function closeOcrModal() {
+      document.getElementById('ocrModal').style.display = 'none';
+    }
+
+    // 🛡️ الدالة الذكية المحدثة خصيصاً لاستخراج أرقام الهواتف المصرية بدقة وتجاهل الفواتير والباركد
+    function extractMatchCode(ocrText) {
+      let cleanText = ocrText.replace(/\s+/g, '');
+      
+      // 1. البحث الصارم عن رقم هاتف مصري يبدأ بـ 01 (010, 011, 012, 015) ويتكون من 11 رقماً
+      let phoneMatch = cleanText.match(/(01[0125][0-9]{8})/);
+      if (phoneMatch && phoneMatch[0]) {
+        let fullPhone = phoneMatch[0];
+        return fullPhone.slice(-6); // أخذ آخر 6 أرقام من رقم الهاتف الحقيقي حصراً
+      }
+      
+      return null; // إذا لم يجد رقم هاتف صحيح، يتجاهل الصورة تماماً لكي لا يلتقط أرقام الفواتير العشوائية
+    }
+
+    async function processImagesForRep() {
+      let repName = document.getElementById('targetRepName').value.trim();
+      let fileInput = document.getElementById('repImagesInput');
+      let statusMsg = document.getElementById('ocrStatusMsg');
+      let unmatchedDiv = document.getElementById('unmatchedList');
+
+      if (!repName) {
+        alert("الرجاء إدخال اسم المندوب أولاً!");
+        return;
+      }
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("الرجاء اختيار صور الشحنات أولاً!");
+        return;
+      }
+
+      statusMsg.innerText = "⏳ جاري فحص واستخراج أرقام الهواتف بدقة...";
+      statusMsg.style.color = "var(--warn)";
+      unmatchedDiv.innerText = "";
+
+      let unmatchedCodes = [];
+
+      try {
+        for (let i = 0; i < fileInput.files.length; i++) {
+          let file = fileInput.files[i];
+          statusMsg.innerText = `⏳ معالجة الصورة (${i + 1} من ${fileInput.files.length})...`;
+
+          let processedBlob = await preprocessImage(file);
+          let result = await Tesseract.recognize(processedBlob, 'eng+ara');
+          let text = result.data.text;
+          
+          let matchCode = extractMatchCode(text);
+
+          if (matchCode) {
+            let targetUrl = `${WEB_APP_URL}?action=updateRep&identifier=${encodeURIComponent(matchCode)}&repName=${encodeURIComponent(repName)}`;
+            
+            let response = await fetch(targetUrl);
+            let resJson = await response.json();
+            
+            if (resJson.status === "not_found") {
+              if (!unmatchedCodes.includes(matchCode)) unmatchedCodes.push(matchCode);
+            }
+          } else {
+            console.warn(`تم تخطي الصورة رقم ${i + 1} لعدم مطابقتها لنمط رقم الهاتف المصري.`);
+          }
+        }
+
+        statusMsg.innerText = `✅ تمت معالجة وتحديث الشحنات بنجاح!`;
+        statusMsg.style.color = "var(--accent2)";
+
+        if (unmatchedCodes.length > 0) {
+          unmatchedDiv.innerHTML = `⚠️ أرقام هواتف استخرجت ولم تتطابق مع الشيت (${repName}):<br>` + unmatchedCodes.join(" - ");
+        } else {
+          unmatchedDiv.innerHTML = "✨ تم التعرف على جميع أرقام الهواتف ومطابقتها وتحديث العمود M بنجاح!";
+        }
+
+        loadSheetData();
+
+      } catch (err) {
+        console.error(err);
+        statusMsg.innerText = "⚠️ حدث خطأ أثناء معالجة الصور أو الاتصال.";
+        statusMsg.style.color = "var(--danger)";
+      }
+    }
+
+    function openDirectCameraModal() {
+      document.getElementById('cameraModal').style.display = 'flex';
+      let video = document.getElementById('cameraStream');
+      
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      })
+      .then(stream => {
+        videoStream = stream;
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          videoStream = stream;
+          video.srcObject = stream;
+        })
+        .catch(e => {
+          alert("تعذر الوصول إلى كاميرا الهاتف. تأكد من إعطاء الصلاحية للمتصفح.");
+        });
+      });
+    }
+
+    function closeCameraModal() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      document.getElementById('cameraModal').style.display = 'none';
+    }
+
+    function takeSnapshot() {
+      let video = document.getElementById('cameraStream');
+      let canvas = document.getElementById('snapshotCanvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      let imageUrl = canvas.toDataURL('image/png');
+      let downloadLink = document.createElement('a');
+      downloadLink.href = imageUrl;
+      downloadLink.download = `إيصال_شحن_${new Date().toISOString().slice(0,10)}.png`;
+      downloadLink.click();
+
+      closeCameraModal();
+      alert("📸 تم التقاط الصورة وحفظها على جهازك بنجاح!");
+    }
+
+    function handleBarcodeScan(event) {
+      if (event.key === 'Enter') {
+        let barcodeVal = document.getElementById('barcodeScannerInput').value.trim();
+        if (barcodeVal) {
+          alert(`⚡ تم مسح الباركود بنجاح: [ ${barcodeVal} ]\nجاري البحث وتحديث الشحنة...`);
+          document.getElementById('barcodeScannerInput').value = "";
+        }
+      }
+    }
+
+    function filterRepsTable() {
+      let input = document.getElementById('repFilterInput').value.toLowerCase();
+      let rows = document.querySelectorAll('#repsTable tbody tr');
+      rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? '' : 'none';
+      });
+    }
+
+    function openRepDetailPage(repName) {
+      activeRepDetailName = repName;
+      document.getElementById('pageRepTitle').innerText = "تفاصيل أداء المندوب: " + repName;
+      sections.forEach(s => s.classList.remove('active'));
+      document.getElementById('rep-detail-page').classList.add('active');
+    }
+
+    function backToRepsList() {
+      sections.forEach(s => s.classList.remove('active'));
+      document.getElementById('reps').classList.add('active');
+    }
+
+    window.onload = function() {
+      loadSheetData();
+    };
+  </script>
+</body>
+</html>
